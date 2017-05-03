@@ -5,7 +5,8 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.urls import reverse
 from django.views import generic
-
+import json
+from .modules import quant
 from .models import Question, Choice
 
 class IndexView(generic.ListView):
@@ -43,3 +44,31 @@ def vote(request, question_id):
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
         return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
+
+def kmeans(request):
+    response_data = {}
+    try:
+        source = request.GET['source']
+    except Exception as e:
+        response_data['success'] = False
+        response_data['message'] = 'No source'
+        return HttpResponse(json.dumps(response_data), content_type="application/json")
+
+    try:
+        k = int(request.GET['k'])
+    except(KeyError, Choice.DoesNotExist):
+        response_data['success'] = False
+        response_data['message'] = 'No k-value'
+        return HttpResponse(json.dumps(response_data), content_type="application/json")
+    except(KeyError, ValueError):
+        response_data['success'] = False
+        response_data['message'] = 'Not a number'
+        return HttpResponse(json.dumps(response_data), content_type="application/json")
+
+
+    response_data['success'] = True
+    response_data['message'] = 'Get colors'
+    center = quant.get_colors(source, k)
+    colors = quant.colorsToString(center)
+    response_data['colors'] = colors
+    return HttpResponse(json.dumps(response_data), content_type="application/json")
