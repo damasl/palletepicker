@@ -2,8 +2,35 @@ import numpy as np
 import cv2
 import urllib.request
 
+def bgrToHsv(bgr):
+	norm = bgr/255.0
+	b = norm[0]
+	g = norm[1]
+	r = norm[2]
+	mx = max(b,g,r)
+	mn = min(b,g,r)
+	df = mx-mn
+	if mx == mn:
+		h = 0
+	elif mx == r:
+		h = 60 * (((g-b)/df)%6)
+	elif mx == g:
+		h = 60 * ((b-r)/df + 2)
+	elif mx == b:
+		h = 60 * ((r-g)/df + 4)
+	if mx == 0:
+		s = 0
+	else:
+		s = df/mx
+	v = mx
+	return np.array([h,s,v])
+
+def bgrArrayToHsvArray(colors):
+	res = cv2.cvtColor(np.array([colors]), cv2.COLOR_BGR2HSV)[0]
+	return res
+
 def rgbToHexString(color):
-	y = np.array([[65536],[256],[1]])
+	y = np.array([[1],[256],[65536]])
 	res = hex(np.matmul(color,y)[0])
 	return res
 
@@ -19,7 +46,6 @@ def url_to_image(url):
 	resp = urllib.request.urlopen(url)
 	image = np.asarray(bytearray(resp.read()), dtype="uint8")
 	image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-
 	# return the image
 	return image
 
@@ -34,13 +60,13 @@ def find_k_colors(image, K):
 
 	return np.uint8(center)
 
-def show_result(center, K):
+def show_result(center, K, name):
 	blank_image = np.zeros((K*40,200,3), np.uint8)
 	i=0
 	for x in center:
 		blank_image[i*40:(i+1)*40,:] = x
 		i = i+1
-	cv2.imshow('colors',blank_image)
+	cv2.imshow(name,blank_image)
 
 def get_colors(url, K):
 	img = url_to_image(url)
